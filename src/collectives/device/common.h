@@ -315,7 +315,7 @@ void NCCL_CALL_FUNCTIONS(unsigned short funcIndex) noexcept {
 template <ncclFunc_t FUNCTION, int ALGO, int PROTO, class REDOP, typename T, int UNROLL>
 class ncclFunction {
   public:
-  __device__ __attribute__((noinline)) void run(struct ncclWorkElem* args) {}
+  __device__  void run(struct ncclWorkElem* args) {}
 };
 
 #ifdef ENABLE_COLLTRACE
@@ -630,7 +630,7 @@ __global__ void NCCL_KERN_NAME_LL128_DEBUG(func, algo, proto, devredop, type)(st
 // Examples :     AllReduce, RING, LL,    Sum,   uint8
 /* Functions for aggregation case */
 #define IMPL_COLL_FUNC(func, algo, proto, devredop, type) \
-__device__  __attribute__((noinline)) void NCCL_FUNC_NAME(func, algo, proto, devredop, type)() { \
+__device__   void NCCL_FUNC_NAME(func, algo, proto, devredop, type)() { \
   RunWork<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto>().run(&ncclShmem->work); \
 }
 
