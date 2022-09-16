@@ -222,7 +222,7 @@ void NCCL_CALL_FUNCTIONS(unsigned short funcIndex) noexcept {
   else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_SIMPLE))
     ncclFunction_AllReduce_TREE_SIMPLE_Sum_float();
   else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_LL))
-    ncclFunction_AllReduce_TREE_LL_Sum_float();
+  ncclFunction_AllReduce_TREE_LL_Sum_float();
   else if (USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_LL128))
     ncclFunction_AllReduce_TREE_LL128_Sum_float();
   else if (!USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_LL128))
@@ -574,12 +574,12 @@ __device__ void ncclKernel(
     //__syncthreads();
     asm volatile("s_waitcnt lgkmcnt(0) \n s_barrier");
 
-    if (tid == 0) __insert_timestamp(__LINE__);
-    if (shmem.work.header.funcIndex == FnIndex) {
-      RunWork<Fn, T, RedOp, Algo, Proto>().run(&shmem.work);
-    } else {
+    //if (tid == 0) __insert_timestamp(__LINE__);
+    //if (shmem.work.header.funcIndex == FnIndex) {
+    //  RunWork<Fn, T, RedOp, Algo, Proto>().run(&shmem.work);
+    //} else {
       NCCL_CALL_FUNCTIONS<USING_LL128>(shmem.work.header.funcIndex);
-    }
+    //}
 
     int workIxNext = shmem.work.header.workNext;
     //__syncthreads();
