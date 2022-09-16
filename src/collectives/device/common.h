@@ -511,7 +511,8 @@ __device__ void ncclKernel(
       }
     }
   }
-  __syncthreads(); // publish shmem.channelId
+  //__syncthreads(); // publish shmem.channelId
+  asm volatile("s_waitcnt lgkmcnt(0) \n s_barrier");
   int channelId = shmem.channelId;
 
   if (true) {
@@ -544,7 +545,8 @@ __device__ void ncclKernel(
     }
     copyToShmem16(tid%WARP_SIZE, dst, src, bytes);
   }
-  __syncthreads(); // publish shmem
+  //__syncthreads(); // publish shmem
+  asm volatile("s_waitcnt lgkmcnt(0) \n s_barrier");
 #ifdef ENABLE_PROFILING
   if (tid == 0) {
     shmem.prof.count = 0;
@@ -567,7 +569,8 @@ __device__ void ncclKernel(
     } else if (shmem.work.header.type == ncclWorkTypeRegColl) {
       if (tid < NCCL_MAX_WORK_ELEMENTS_REG) ncclRedopPtrDeref(&shmem.work.regElems[tid].elem);
     }
-    __syncthreads();
+    //__syncthreads();
+    asm volatile("s_waitcnt lgkmcnt(0) \n s_barrier");
 
     if (tid == 0) __insert_timestamp(__LINE__);
     if (shmem.work.header.funcIndex == FnIndex) {
@@ -577,7 +580,8 @@ __device__ void ncclKernel(
     }
 
     int workIxNext = shmem.work.header.workNext;
-    __syncthreads();
+    //__syncthreads();
+    asm volatile("s_waitcnt lgkmcnt(0) \n s_barrier");
     if (shmem.work.header.isLast) break;
 
     copyToShmem16(tid, &shmem.work, workHead + workIxNext, sizeof(ncclWork));
@@ -594,7 +598,8 @@ __device__ void ncclKernel(
   if (COLLTRACE && tid == 0) traceKernelEnd();
 #ifdef ENABLE_PROFILING
   if (shmem.comm.devProf->seq < PROFILE_NUM_LAUNCHES) {
-    __syncthreads();
+    //__syncthreads();
+    asm volatile("s_waitcnt lgkmcnt(0) \n s_barrier");
     copyToShmem16(tid, shmem.comm.devProf+MAXCHANNELS*shmem.prof.seq+blockIdx.x, &shmem.prof, sizeof(struct ncclProf));
     if (tid == 0) shmem.comm.devProf[blockIdx.x].seq++;
   }
