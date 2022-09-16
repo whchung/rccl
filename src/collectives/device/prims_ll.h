@@ -37,6 +37,7 @@ class Primitives<T, RedOp, Fan, Direct, ProtoLL, P2p>:
   uint64_t sendStep[MaxSend];
   union ncclLLFifoLine* recvBuff[MaxRecv];
   union ncclLLFifoLine* sendBuff[MaxSend];
+  struct ncclShmemData* shmem;
 
 #if defined(ENABLE_NPKIT)
 public:
@@ -83,7 +84,7 @@ private:
   inline __device__ int checkAbort(int &spins, int send) {
     spins++;
     if (abort == 0 && spins == NCCL_SPINS_BEFORE_CHECK_ABORT) {
-      abort = __atomic_load_n((ncclShmem->comm.abortFlag), __ATOMIC_SEQ_CST);
+      abort = __atomic_load_n((shmem->comm.abortFlag), __ATOMIC_SEQ_CST);
       spins = 0;
     }
     return abort;
@@ -93,7 +94,7 @@ private:
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_PRIM_LL_WAIT_SEND_ENTRY)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_PRIM_LL_WAIT_SEND_ENTRY, nbytes, 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
     if (sendConnHeadPtr) {
@@ -114,7 +115,7 @@ private:
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_PRIM_LL_WAIT_SEND_EXIT)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_PRIM_LL_WAIT_SEND_EXIT, nbytes, 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
   }
@@ -376,7 +377,7 @@ private:
       npKitWaitRecvTotalTime = 0;
       npKitWaitRecvDataProcessSize = nelem*sizeof(T);
       NpKit::CollectGpuEvent(NPKIT_EVENT_PRIM_LL_DATA_PROCESS_ENTRY,
-          npKitWaitRecvDataProcessSize, 0, __builtin_amdgcn_s_memrealtime(), ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          npKitWaitRecvDataProcessSize, 0, __builtin_amdgcn_s_memrealtime(), shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
 
@@ -446,7 +447,7 @@ private:
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_PRIM_LL_DATA_PROCESS_EXIT,
           npKitWaitRecvDataProcessSize, npKitWaitRecvTotalTime, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
 
@@ -489,16 +490,18 @@ private:
 
  public:
   __device__  Primitives(
+      struct ncclShmemData* shmemArg,
       const int tid, const int nthreads, int const *recvPeers, int const *sendPeers,
       void const *inputBuf, void *outputBuf, uint64_t redOpArg, int group=0
     ):
+    shmem(shmemArg),
     redOp(redOpArg),
     tid(tid), nthreads(nthreads), wid(tid%WARP_SIZE), group(group&(uint16_t)0xFFFF),
-    stepLines(ncclShmem->comm.buffSizes[NCCL_PROTO_LL]/NCCL_STEPS/sizeof(ncclLLFifoLine)) {
-    barriers = &ncclShmem->groups[this->group].barrier;
-    barrier_next = ncclShmem->groups[this->group].barrier_next;
+    stepLines(shmem->comm.buffSizes[NCCL_PROTO_LL]/NCCL_STEPS/sizeof(ncclLLFifoLine)) {
+    barriers = &shmem->groups[this->group].barrier;
+    barrier_next = shmem->groups[this->group].barrier_next;
 
-    auto *channel = &ncclShmem->channel;
+    auto *channel = &shmem->channel;
     // If we are going to support oneshot collNet + LL, then we would need to add connector index here
     int nrecv=0, nsend=0;
     while (nrecv < MaxRecv && recvPeers[nrecv] >= 0) {
@@ -539,14 +542,14 @@ private:
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_SEND_ENTRY)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_SEND_ENTRY, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
     LLGenericOp<0, 1, Input, -1>(inpIx, -1, eltN, false);
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_SEND_EXIT)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_SEND_EXIT, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
   }
@@ -554,14 +557,14 @@ private:
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_SEND_FROM_OUTPUT_ENTRY)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_SEND_FROM_OUTPUT_ENTRY, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
     LLGenericOp<0, 1, Output, -1>(outIx, -1, eltN, false);
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_SEND_FROM_OUTPUT_EXIT)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_SEND_FROM_OUTPUT_EXIT, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
   }
@@ -569,14 +572,14 @@ private:
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_RECV_ENTRY)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_RECV_ENTRY, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
     LLGenericOp<1, 0, -1, Output>(-1, outIx, eltN, postOp);
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_RECV_EXIT)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_RECV_EXIT, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
   }
@@ -584,14 +587,14 @@ private:
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_RECV_REDUCE_SEND_ENTRY)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_RECV_REDUCE_SEND_ENTRY, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
     LLGenericOp<1, 1, Input, -1>(inpIx, -1, eltN, false);
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_RECV_REDUCE_SEND_EXIT)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_RECV_REDUCE_SEND_EXIT, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
   }
@@ -599,14 +602,14 @@ private:
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_RECV_REDUCE_COPY_ENTRY)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_RECV_REDUCE_COPY_ENTRY, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
     LLGenericOp<1, 0, Input, Output>(inpIx, outIx, eltN, postOp);
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_RECV_REDUCE_COPY_EXIT)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_RECV_REDUCE_COPY_EXIT, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
   }
@@ -614,14 +617,14 @@ private:
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_COPY_SEND_ENTRY)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_COPY_SEND_ENTRY, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
     LLGenericOp<0, 1, Input, Output>(inpIx, outIx, eltN, postOp);
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_COPY_SEND_EXIT)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_COPY_SEND_EXIT, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
   }
@@ -629,14 +632,14 @@ private:
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_RECV_COPY_SEND_ENTRY)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_RECV_COPY_SEND_ENTRY, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
     LLGenericOp<1, 1, -1, Output>(-1, outIx, eltN, postOp);
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_RECV_COPY_SEND_EXIT)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_RECV_COPY_SEND_EXIT, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
   }
@@ -644,14 +647,14 @@ private:
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_RECV_REDUCE_COPY_SEND_ENTRY)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_RECV_REDUCE_COPY_SEND_ENTRY, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
     LLGenericOp<1, 1, Input, Output>(inpIx, outIx, eltN, postOp);
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_RECV_REDUCE_COPY_SEND_EXIT)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_RECV_REDUCE_COPY_SEND_EXIT, eltN*sizeof(T), 0, __builtin_amdgcn_s_memrealtime(),
-          ncclShmem->comm.npKitEventCollectContexts + npKitCtxIdx);
+          shmem->comm.npKitEventCollectContexts + npKitCtxIdx);
     }
 #endif
   }

@@ -68,7 +68,7 @@
   NCCL_FUNCS3B(func, Sum)
 
 // Must be consistent with the ncclFuncSet enum
-using ncclKernelFunc_t = void (*)();
+using ncclKernelFunc_t = void (*)(struct ncclShmemData*);
 
 static const __device__ constexpr ncclKernelFunc_t ncclFuncs[]{
 // Don't try to initialize the host shadow copy of this device-side global
@@ -153,7 +153,7 @@ static const __device__ constexpr ncclKernelFunc_t ncclFuncs[]{
   NCCL_FUNCS3B_LL128(func, Sum)
 
 // Must be consistent with the ncclFuncSet enum
-using ncclKernelFunc_t = void (*)();
+using ncclKernelFunc_t = void (*)(struct ncclShmemData*);
 
 static const __device__ constexpr ncclKernelFunc_t ncclFuncs_ll128[]{
 // Don't try to initialize the host shadow copy of this device-side global
@@ -189,18 +189,18 @@ static const __device__ constexpr ncclKernelFunc_t ncclFuncs_ll128[]{
 template<unsigned short f, unsigned short l, bool u>
 struct Caller {
   static __device__ __host__
-  void call(unsigned short funcIndex) noexcept
+  void call(unsigned short funcIndex, struct ncclShmemData* shmem) noexcept
   {
     constexpr unsigned short m = f + (l - f) / 2;
 
-     return (funcIndex < m) ? Caller<f, m, u>::call(funcIndex) : Caller<m, l, u>::call(funcIndex);
+     return (funcIndex < m) ? Caller<f, m, u>::call(funcIndex, shmem) : Caller<m, l, u>::call(funcIndex, shmem);
   }
 };
 
 template<unsigned short f, bool u>
 struct Caller<f, f + 1, u>{
   static __device__ __host__
-  void call(unsigned short funcIndex) noexcept { if (u) ncclFuncs_ll128[f](); else ncclFuncs[f](); }
+  void call(unsigned short funcIndex, struct ncclShmemData* shmem) noexcept { if (u) ncclFuncs_ll128[f](shmem); else ncclFuncs[f](shmem); }
 };
 
 static_assert(FUNC_INDEX_P2P == 2710, "Wrong P2P function index");
@@ -209,32 +209,32 @@ static_assert(FUNC_INDEX_ALLTOALL_PIVOT == 2711, "Wrong AllToAllPivot function i
 template<bool USING_LL128>
 inline
 __device__
-void NCCL_CALL_FUNCTIONS(unsigned short funcIndex) noexcept {
+void NCCL_CALL_FUNCTIONS(unsigned short funcIndex, struct ncclShmemData* shmem) noexcept {
 #if defined(BUILD_ALLREDUCE_ONLY)
   if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_RING, NCCL_PROTO_SIMPLE))
-    ncclFunction_AllReduce_RING_SIMPLE_Sum_float();
+    ncclFunction_AllReduce_RING_SIMPLE_Sum_float(shmem);
   else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_RING, NCCL_PROTO_LL))
-    ncclFunction_AllReduce_RING_LL_Sum_float();
+    ncclFunction_AllReduce_RING_LL_Sum_float(shmem);
   else if (USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_RING, NCCL_PROTO_LL128))
-    ncclFunction_AllReduce_RING_LL128_Sum_float();
+    ncclFunction_AllReduce_RING_LL128_Sum_float(shmem);
   else if (!USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_RING, NCCL_PROTO_LL128))
-    ncclFunction_AllReduce_RING_LL_Sum_float();
+    ncclFunction_AllReduce_RING_LL_Sum_float(shmem);
   else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_SIMPLE))
-    ncclFunction_AllReduce_TREE_SIMPLE_Sum_float();
+    ncclFunction_AllReduce_TREE_SIMPLE_Sum_float(shmem);
   else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_LL))
-  ncclFunction_AllReduce_TREE_LL_Sum_float();
+  ncclFunction_AllReduce_TREE_LL_Sum_float(shmem);
   else if (USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_LL128))
-    ncclFunction_AllReduce_TREE_LL128_Sum_float();
+    ncclFunction_AllReduce_TREE_LL128_Sum_float(shmem);
   else if (!USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_LL128))
-    ncclFunction_AllReduce_TREE_LL_Sum_float();
+    ncclFunction_AllReduce_TREE_LL_Sum_float(shmem);
   else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_COLLNET, NCCL_PROTO_SIMPLE))
-    ncclFunction_AllReduce_COLLNET_SIMPLE_Sum_float();
+    ncclFunction_AllReduce_COLLNET_SIMPLE_Sum_float(shmem);
   else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_COLLNET, NCCL_PROTO_LL))
-    ncclFunction_AllReduce_COLLNET_LL_Sum_float();
+    ncclFunction_AllReduce_COLLNET_LL_Sum_float(shmem);
   else if (USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_COLLNET, NCCL_PROTO_LL128))
-    ncclFunction_AllReduce_COLLNET_LL128_Sum_float();
+    ncclFunction_AllReduce_COLLNET_LL128_Sum_float(shmem);
   else if (!USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_COLLNET, NCCL_PROTO_LL128))
-    ncclFunction_AllReduce_COLLNET_LL_Sum_float();
+    ncclFunction_AllReduce_COLLNET_LL_Sum_float(shmem);
   else
     assert("Unsupported function index");
 #else
@@ -315,7 +315,7 @@ void NCCL_CALL_FUNCTIONS(unsigned short funcIndex) noexcept {
 template <ncclFunc_t FUNCTION, int ALGO, int PROTO, class REDOP, typename T, int UNROLL>
 class ncclFunction {
   public:
-  __device__  void run(struct ncclWorkElem* args) {}
+  __device__  void run(struct ncclWorkElem* args, struct ncclShmemData* shmem) {}
 };
 
 #ifdef ENABLE_COLLTRACE
@@ -369,17 +369,18 @@ class ncclFunction {
     collTrace->type = ncclCollTraceAbortType; \
   }
 //  traceData(int16_t data2, uint32_t data4, uint64_t data8_0, uint64_t data8_1)
-#define traceData(data2, data4, data8_0, data8_1) { \
-    uint32_t pos = __atomic_fetch_add(ncclShmem->comm.collTraceTail, 1, __ATOMIC_SEQ_CST)%COLLTRACE_NUM_ITEMS; \
-    struct ncclCollTrace* collTrace = ncclShmem->comm.collTrace+pos; \
-    collTrace->bid = blockIdx.x; \
-    collTrace->timeStamp = __builtin_amdgcn_s_memrealtime(); \
-    collTrace->funcIndex = data2; \
-    collTrace->data_0 = data4; \
-    collTrace->opCount = data8_0; \
-    collTrace->data_1 = data8_1; \
-    collTrace->type = ncclCollTraceDataType; \
-  }
+#define traceData(data2, data4, data8_0, data8_1)
+//#define traceData(data2, data4, data8_0, data8_1) { \
+//    uint32_t pos = __atomic_fetch_add(ncclShmem->comm.collTraceTail, 1, __ATOMIC_SEQ_CST)%COLLTRACE_NUM_ITEMS; \
+//    struct ncclCollTrace* collTrace = ncclShmem->comm.collTrace+pos; \
+//    collTrace->bid = blockIdx.x; \
+//    collTrace->timeStamp = __builtin_amdgcn_s_memrealtime(); \
+//    collTrace->funcIndex = data2; \
+//    collTrace->data_0 = data4; \
+//    collTrace->opCount = data8_0; \
+//    collTrace->data_1 = data8_1; \
+//    collTrace->type = ncclCollTraceDataType; \
+//  }
 #else
 #define traceData(data2, data4, data8_0, data8_1)
 #endif
@@ -436,7 +437,7 @@ inline __device__ void copyToShmem16(int tid, void* dst, void const* src, int by
 
 template<ncclFunc_t Fn, typename T, typename RedOp, int Algo, int Proto>
 struct RunWorkElement {
-  __device__ void run(ncclWorkElem*) {
+  __device__ void run(ncclWorkElem*, struct ncclShmemData* shmem) {
     // Put NOT IMPLEMENTED behavior here.
   }
 };
@@ -445,14 +446,14 @@ template<ncclFunc_t Fn, typename T, typename RedOp, int Algo, int Proto>
 struct RunWork {
   // This __forceinline__ is necessary. The compiler was inserting a function call
   // here from the LL ncclKernel.
-  __device__ __forceinline__ void run(ncclWork *w) {
+  __device__ __forceinline__ void run(ncclWork *w, struct ncclShmemData* shmem) {
     int wid = threadIdx.x / WARP_SIZE;
     ncclWorkElem* we = w->header.type == ncclWorkTypeRegColl ? &w->regElems[0].elem : &w->elems[0];
     int stride = w->header.type == ncclWorkTypeRegColl ? sizeof(ncclWorkElemReg) : sizeof(ncclWorkElem);
     #pragma unroll 1
     while ((char*)we + stride <= (char*)(w+1) && we->isUsed) {
       if (wid < we->nWarps) {
-        RunWorkElement<Fn, T, RedOp, Algo, Proto>().run(we);
+        RunWorkElement<Fn, T, RedOp, Algo, Proto>().run(we, shmem);
       }
       we = (ncclWorkElem*)((char*)we + stride);
     }
@@ -480,15 +481,12 @@ static __device__ void ncclRedopPtrDeref(struct ncclWorkElem* we) {
   }
 }
 
-extern __device__ struct ncclShmemData *ncclShmem;
-
 template<ncclFunc_t Fn, typename T, typename RedOp, int Algo, int Proto, int FnIndex, bool COLLTRACE, bool USING_LL128>
 __device__ void ncclKernel(
     struct ncclDevComm* comm, uint64_t channelMask, struct ncclWork* workHead
   )  {
   int tid = threadIdx.x;
   __shared__ struct ncclShmemData shmem;
-  ncclShmem = &shmem;
   if (tid == 0) {
     for (auto i = 0; i < NCCL_MAX_GROUPS; i++) {
       shmem.groups[i].barrier = 0;
@@ -578,7 +576,7 @@ __device__ void ncclKernel(
     //if (shmem.work.header.funcIndex == FnIndex) {
     //  RunWork<Fn, T, RedOp, Algo, Proto>().run(&shmem.work);
     //} else {
-      NCCL_CALL_FUNCTIONS<USING_LL128>(shmem.work.header.funcIndex);
+      NCCL_CALL_FUNCTIONS<USING_LL128>(shmem.work.header.funcIndex, &shmem);
     //}
 
     int workIxNext = shmem.work.header.workNext;
@@ -636,8 +634,8 @@ __global__ void NCCL_KERN_NAME_LL128_DEBUG(func, algo, proto, devredop, type)(st
 // Examples :     AllReduce, RING, LL,    Sum,   uint8
 /* Functions for aggregation case */
 #define IMPL_COLL_FUNC(func, algo, proto, devredop, type) \
-__device__   void NCCL_FUNC_NAME(func, algo, proto, devredop, type)() { \
-  RunWork<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto>().run(&ncclShmem->work); \
+__device__   void NCCL_FUNC_NAME(func, algo, proto, devredop, type)(struct ncclShmemData* shmem) { \
+  RunWork<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto>().run(&shmem->work, shmem); \
 }
 
 // Only generate inline kernels for LL

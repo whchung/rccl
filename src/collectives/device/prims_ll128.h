@@ -43,6 +43,7 @@ class Primitives<T, RedOp, Fan, Direct, ProtoLL128, P2p>:
   uint64_t sendStep[MaxSend];
   uint64_t* recvBuff[MaxRecv];
   uint64_t* sendBuff[MaxSend];
+  struct ncclShmemData* shmem;
 
   inline __device__ int recvOffset(int i) { return (recvStep[i]%NCCL_STEPS)*stepSize; }
   inline __device__ int sendOffset(int i) { return (sendStep[i]%NCCL_STEPS)*stepSize; }
@@ -78,7 +79,7 @@ private:
   inline __device__ int checkAbort(int &spins, int i, int send) {
     spins++;
     if (abort == 0 && spins == NCCL_SPINS_BEFORE_CHECK_ABORT) {
-      abort = __atomic_load_n(ncclShmem->comm.abortFlag, __ATOMIC_SEQ_CST);
+      abort = __atomic_load_n(shmem->comm.abortFlag, __ATOMIC_SEQ_CST);
       spins = 0;
     }
     return abort;
@@ -402,17 +403,19 @@ private:
 
 public:
   __device__ Primitives(
+      struct ncclShmemData* shmemArg,
       const int tid, const int nthreads, int const *recvPeers, int const *sendPeers,
       void const *inputBuf, void *outputBuf, uint64_t redOpArg, int group=0
     ):
+    shmem(shmemArg),
     redOp(redOpArg),
     tid(tid), nthreads(nthreads), wid(tid%WARP_SIZE), warp(tid/WARP_SIZE),
     flagThread((tid%4)==3), group(group&(uint16_t)0xFFFF),
-    stepSize(ncclShmem->comm.buffSizes[NCCL_PROTO_LL128]/NCCL_STEPS/sizeof(uint64_t)) {
-    barriers = &ncclShmem->groups[this->group].barrier;
-    barrier_next = ncclShmem->groups[this->group].barrier_next;
+    stepSize(shmem->comm.buffSizes[NCCL_PROTO_LL128]/NCCL_STEPS/sizeof(uint64_t)) {
+    barriers = &shmem->groups[this->group].barrier;
+    barrier_next = shmem->groups[this->group].barrier_next;
 
-    auto *channel = &ncclShmem->channel;
+    auto *channel = &shmem->channel;
     int nrecv=0, nsend=0;
     while (nrecv < MaxRecv && recvPeers[nrecv] >= 0) {
       loadRecvConn(&channel->peers[recvPeers[nrecv]].recv[0], nrecv);
