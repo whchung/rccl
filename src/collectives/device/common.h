@@ -645,6 +645,8 @@ __device__  __attribute__((noinline)) void NCCL_FUNC_NAME(func, algo, proto, dev
   IMPL_COLL4(func, RING,    devredop, type, ncclType) \
   IMPL_COLL4(func, COLLNET, devredop, type, ncclType)
 
+#define IMPL_COLL2(func, devredop) IMPL_COLL3(func, devredop, float,   ncclFloat32)
+#if 0
 #define IMPL_COLL2(func, devredop) \
   IMPL_COLL3(func, devredop, int8_t,   ncclInt8) \
   IMPL_COLL3(func, devredop, uint8_t,  ncclUint8) \
@@ -656,7 +658,9 @@ __device__  __attribute__((noinline)) void NCCL_FUNC_NAME(func, algo, proto, dev
   IMPL_COLL3(func, devredop, float,    ncclFloat32) \
   IMPL_COLL3(func, devredop, double,   ncclFloat64) \
   IMPL_COLL3(func, devredop, rccl_bfloat16, ncclBfloat16)
+#endif
 
+#if 0
 #define IMPL_COLL2A(func, devredop) \
   IMPL_COLL3(func, devredop, int8_t,   ncclInt8) \
   IMPL_COLL3(func, devredop, uint8_t,  ncclUint8) \
@@ -664,8 +668,11 @@ __device__  __attribute__((noinline)) void NCCL_FUNC_NAME(func, algo, proto, dev
   IMPL_COLL3(func, devredop, uint32_t, ncclUint32) \
   IMPL_COLL3(func, devredop, int64_t,  ncclInt64) \
   IMPL_COLL3(func, devredop, uint64_t, ncclUint64)
+#endif
 
 // Reduction define all functions
+#define IMPL_COLL_R(func) IMPL_COLL2(func, Sum)
+#if 0
 #define IMPL_COLL_R(func) \
   IMPL_COLL2(func, Sum) \
   IMPL_COLL2(func, Prod) \
@@ -673,6 +680,7 @@ __device__  __attribute__((noinline)) void NCCL_FUNC_NAME(func, algo, proto, dev
   IMPL_COLL2(func, Max) \
   IMPL_COLL2(func, PreMulSum) \
   IMPL_COLL2A(func, SumPostDiv)
+#endif
 
 // Copy primitives only define one function for copy
 #define IMPL_COLL_C(func) IMPL_COLL3(func, Sum, int8_t, ncclInt8);

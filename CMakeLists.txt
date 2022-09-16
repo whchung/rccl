@@ -34,7 +34,8 @@ set(CMAKE_INSTALL_PREFIX "${ROCM_PATH}" CACHE PATH "")
 #Set the AMDGPU_TARGETS with backward compatiblity
 if(COMMAND rocm_check_target_ids)
    rocm_check_target_ids(DEFAULT_AMDGPU_TARGETS
-       TARGETS "gfx803;gfx900:xnack-;gfx906:xnack-;gfx908:xnack-;gfx90a:xnack-;gfx90a:xnack+;gfx1030"
+       #TARGETS "gfx803;gfx900:xnack-;gfx906:xnack-;gfx908:xnack-;gfx90a:xnack-;gfx90a:xnack+;gfx1030"
+       TARGETS "gfx90a:xnack-"
    )
 else()
     # Use target ID syntax if supported for AMDGPU_TARGETS
@@ -49,7 +50,7 @@ set(AMDGPU_TARGETS "${DEFAULT_AMDGPU_TARGETS}" CACHE STRING "List of specific ma
 option(BUILD_TESTS "Build test programs" OFF)
 option(INSTALL_DEPENDENCIES "Force install dependencies" OFF)
 option(BUILD_ADDRESS_SANITIZER "Build with address sanitizer enabled" OFF)
-option(BUILD_ALLREDUCE_ONLY "Build AllReduce + sum + float kernel only" OFF)
+option(BUILD_ALLREDUCE_ONLY "Build AllReduce + sum + float kernel only" ON)
 #Set the header wrapper ON by default.
 option(BUILD_FILE_REORG_BACKWARD_COMPATIBILITY "Build with file/folder reorg with backward compatibility enabled" ON)
 
