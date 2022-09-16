@@ -553,9 +553,11 @@ __device__ void ncclKernel(
     shmem.prof.seq = shmem.comm.devProf[blockIdx.x].seq;
   }
 #endif
-  if (tid == 0) __insert_timestamp(__LINE__);
+  //if (tid == 0) __insert_timestamp(__LINE__);
 
+#if ENABLE_COLLTRACE
   if (COLLTRACE && tid == 0) traceKernelLaunch(true);
+#endif
 
   while (true) {
     // Notify host that all fifo reads are complete.
@@ -586,6 +588,7 @@ __device__ void ncclKernel(
 
     copyToShmem16(tid, &shmem.work, workHead + workIxNext, sizeof(ncclWork));
 
+#if ENABLE_COLLTRACE 
     { // Check whether the last operation was aborted and make sure all threads exit
       int aborted = tid == 0 ? *comm->abortFlag : 0;
       if (__any(aborted)) { // publish shmem.work
@@ -594,8 +597,11 @@ __device__ void ncclKernel(
       }
     }
     if (COLLTRACE && tid == 0) traceColl(false);
+#endif
   }
+#if ENABLE_COLLTRACE
   if (COLLTRACE && tid == 0) traceKernelEnd();
+#endif
 #ifdef ENABLE_PROFILING
   if (shmem.comm.devProf->seq < PROFILE_NUM_LAUNCHES) {
     //__syncthreads();

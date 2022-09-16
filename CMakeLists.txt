@@ -237,7 +237,7 @@ if(NPKIT_FLAGS)
   add_definitions(${NPKIT_FLAGS})
 endif()
 
-set(COLLTRACE 1 CACHE BOOL "Collective Trace Option")
+set(COLLTRACE 0 CACHE BOOL "Collective Trace Option")
 if(COLLTRACE)
   add_definitions(-DENABLE_COLLTRACE)
 endif()
