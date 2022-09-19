@@ -450,7 +450,6 @@ struct RunWork {
     int wid = threadIdx.x / WARP_SIZE;
     ncclWorkElem* we = w->header.type == ncclWorkTypeRegColl ? &w->regElems[0].elem : &w->elems[0];
     int stride = w->header.type == ncclWorkTypeRegColl ? sizeof(ncclWorkElemReg) : sizeof(ncclWorkElem);
-    #pragma unroll 1
     while ((char*)we + stride <= (char*)(w+1) && we->isUsed) {
       if (wid < we->nWarps) {
         RunWorkElement<Fn, T, RedOp, Algo, Proto>().run(we, shmem);
