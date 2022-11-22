@@ -73,7 +73,7 @@ static void* const ncclKernelGeneric = (void*)NCCL_KERN_NAME(SendRecv, RING, SIM
   NCCL_FUNCS3B(func, Sum), /*PreMulSum*/ \
   NCCL_FUNCS3B(func, Sum)  /*SumPostDiv*/
 
-typedef void(*ncclKern_t)(struct ncclDevComm* comm, uint64_t channelMask, struct ncclWork* workHead);
+typedef void(*ncclKern_t)(struct ncclDevComm* __restrict__ comm, void* __restrict__ channelMaskPtr, struct ncclWork* __restrict__ workHead);
 // Must be consistent with the ncclFuncSet enum
 static ncclKern_t const ncclKerns[4] = {
   NCCL_KERN_NAME(SendRecv, RING, SIMPLE, Sum, int8_t),

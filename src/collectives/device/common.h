@@ -484,8 +484,9 @@ extern __device__ struct ncclShmemData *ncclShmem;
 
 template<ncclFunc_t Fn, typename T, typename RedOp, int Algo, int Proto, int FnIndex, bool COLLTRACE, bool USING_LL128>
 __device__ void ncclKernel(
-    struct ncclDevComm* comm, uint64_t channelMask, struct ncclWork* workHead
+    struct ncclDevComm * __restrict__ comm, void* __restrict__ channelMaskPtr, struct ncclWork* __restrict__ workHead
   )  {
+  uint64_t channelMask = reinterpret_cast<uint64_t>(channelMaskPtr);
   int tid = threadIdx.x;
   __shared__ struct ncclShmemData shmem;
   ncclShmem = &shmem;
@@ -608,8 +609,8 @@ __device__ void ncclKernel(
 
 #define IMPL_COLL_KERN(func, algo, proto, devredop, type, fIndex) \
 __launch_bounds__(NCCL_MAX_NTHREADS, 1) \
-__global__ void NCCL_KERN_NAME(func, algo, proto, devredop, type)(struct ncclDevComm* comm, uint64_t channelMask, struct ncclWork* workHead) { \
-  ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, false, false>(comm, channelMask, workHead); \
+__global__ void NCCL_KERN_NAME(func, algo, proto, devredop, type)(struct ncclDevComm* __restrict__ comm, void* __restrict__ channelMaskPtr, struct ncclWork* __restrict__ workHead) { \
+  ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, false, false>(comm, channelMaskPtr, workHead); \
 } \
  \
 
