@@ -614,18 +614,18 @@ __global__ void NCCL_KERN_NAME(func, algo, proto, devredop, type)(struct ncclDev
 } \
  \
 __launch_bounds__(NCCL_MAX_NTHREADS, 1) \
-__global__ void NCCL_KERN_NAME_DEBUG(func, algo, proto, devredop, type)(struct ncclDevComm* comm, uint64_t channelMask, struct ncclWork* workHead) { \
-  ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, true, false>(comm, channelMask, workHead); \
+__global__ void NCCL_KERN_NAME_DEBUG(func, algo, proto, devredop, type)(struct ncclDevComm* __restrict__ comm, void* __restrict__ channelMaskPtr, struct ncclWork* __restrict__ workHead) { \
+  ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, true, false>(comm, channelMaskPtr, workHead); \
 } \
  \
 __launch_bounds__(NCCL_MAX_NTHREADS, 1) \
-__global__ void NCCL_KERN_NAME_LL128(func, algo, proto, devredop, type)(struct ncclDevComm* comm, uint64_t channelMask, struct ncclWork* workHead) { \
-  ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, false, true>(comm, channelMask, workHead); \
+__global__ void NCCL_KERN_NAME_LL128(func, algo, proto, devredop, type)(struct ncclDevComm* __restrict__ comm, void* __restrict__ channelMaskPtr, struct ncclWork* __restrict__ workHead) { \
+  ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, false, true>(comm, channelMaskPtr, workHead); \
 } \
  \
 __launch_bounds__(NCCL_MAX_NTHREADS, 1) \
-__global__ void NCCL_KERN_NAME_LL128_DEBUG(func, algo, proto, devredop, type)(struct ncclDevComm* comm, uint64_t channelMask, struct ncclWork* workHead) { \
-  ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, true, true>(comm, channelMask, workHead); \
+__global__ void NCCL_KERN_NAME_LL128_DEBUG(func, algo, proto, devredop, type)(struct ncclDevComm* __restrict__ comm, void* __restrict__ channelMaskPtr, struct ncclWork* __restrict__ workHead) { \
+  ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, true, true>(comm, channelMaskPtr, workHead); \
 }
 
 // Examples :     AllReduce, RING, LL,    Sum,   uint8
