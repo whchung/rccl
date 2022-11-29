@@ -211,32 +211,32 @@ inline
 __device__
 void NCCL_CALL_FUNCTIONS(unsigned short funcIndex) noexcept {
 #if defined(BUILD_ALLREDUCE_ONLY)
-  //if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_RING, NCCL_PROTO_SIMPLE))
+  if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_RING, NCCL_PROTO_SIMPLE))
     ncclFunction_AllReduce_RING_SIMPLE_Sum_float();
-  //else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_RING, NCCL_PROTO_LL))
-  //  ncclFunction_AllReduce_RING_LL_Sum_float();
-  //else if (USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_RING, NCCL_PROTO_LL128))
-  //  ncclFunction_AllReduce_RING_LL128_Sum_float();
-  //else if (!USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_RING, NCCL_PROTO_LL128))
-  //  ncclFunction_AllReduce_RING_LL_Sum_float();
-  //else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_SIMPLE))
-  //  ncclFunction_AllReduce_TREE_SIMPLE_Sum_float();
-  //else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_LL))
-  //  ncclFunction_AllReduce_TREE_LL_Sum_float();
-  //else if (USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_LL128))
-  //  ncclFunction_AllReduce_TREE_LL128_Sum_float();
-  //else if (!USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_LL128))
-  //  ncclFunction_AllReduce_TREE_LL_Sum_float();
-  //else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_COLLNET, NCCL_PROTO_SIMPLE))
-  //  ncclFunction_AllReduce_COLLNET_SIMPLE_Sum_float();
-  //else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_COLLNET, NCCL_PROTO_LL))
-  //  ncclFunction_AllReduce_COLLNET_LL_Sum_float();
-  //else if (USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_COLLNET, NCCL_PROTO_LL128))
-  //  ncclFunction_AllReduce_COLLNET_LL128_Sum_float();
-  //else if (!USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_COLLNET, NCCL_PROTO_LL128))
-  //  ncclFunction_AllReduce_COLLNET_LL_Sum_float();
-  //else
-  //  assert("Unsupported function index");
+  else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_RING, NCCL_PROTO_LL))
+    ncclFunction_AllReduce_RING_LL_Sum_float();
+  else if (USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_RING, NCCL_PROTO_LL128))
+    ncclFunction_AllReduce_RING_LL128_Sum_float();
+  else if (!USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_RING, NCCL_PROTO_LL128))
+    ncclFunction_AllReduce_RING_LL_Sum_float();
+  else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_SIMPLE))
+    ncclFunction_AllReduce_TREE_SIMPLE_Sum_float();
+  else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_LL))
+    ncclFunction_AllReduce_TREE_LL_Sum_float();
+  else if (USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_LL128))
+    ncclFunction_AllReduce_TREE_LL128_Sum_float();
+  else if (!USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_TREE, NCCL_PROTO_LL128))
+    ncclFunction_AllReduce_TREE_LL_Sum_float();
+  else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_COLLNET, NCCL_PROTO_SIMPLE))
+    ncclFunction_AllReduce_COLLNET_SIMPLE_Sum_float();
+  else if (funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_COLLNET, NCCL_PROTO_LL))
+    ncclFunction_AllReduce_COLLNET_LL_Sum_float();
+  else if (USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_COLLNET, NCCL_PROTO_LL128))
+    ncclFunction_AllReduce_COLLNET_LL128_Sum_float();
+  else if (!USING_LL128 && funcIndex == FUNC_INDEX(ncclFuncAllReduce, ncclSum, ncclFloat32, NCCL_ALGO_COLLNET, NCCL_PROTO_LL128))
+    ncclFunction_AllReduce_COLLNET_LL_Sum_float();
+  else
+    assert("Unsupported function index");
 #else
   if (funcIndex < 540) {
     if (funcIndex % 9 == 0) ncclFunction_Broadcast_TREE_LL_Sum_int8_t();
@@ -613,8 +613,6 @@ __global__ void NCCL_KERN_NAME(func, algo, proto, devredop, type)(struct ncclDev
   ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, false, false>(comm, channelMaskPtr, workHead); \
 } \
  \
-
-#if 0
 __launch_bounds__(NCCL_MAX_NTHREADS, 1) \
 __global__ void NCCL_KERN_NAME_DEBUG(func, algo, proto, devredop, type)(struct ncclDevComm* comm, uint64_t channelMask, struct ncclWork* workHead) { \
   ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, true, false>(comm, channelMask, workHead); \
@@ -629,7 +627,6 @@ __launch_bounds__(NCCL_MAX_NTHREADS, 1) \
 __global__ void NCCL_KERN_NAME_LL128_DEBUG(func, algo, proto, devredop, type)(struct ncclDevComm* comm, uint64_t channelMask, struct ncclWork* workHead) { \
   ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, true, true>(comm, channelMask, workHead); \
 }
-#endif
 
 // Examples :     AllReduce, RING, LL,    Sum,   uint8
 /* Functions for aggregation case */
@@ -640,20 +637,14 @@ __device__   void NCCL_FUNC_NAME(func, algo, proto, devredop, type)() { \
 
 // Only generate inline kernels for LL
 #define IMPL_COLL4(func, algo, devredop, type, ncclType) \
-  IMPL_COLL_FUNC(func, algo, SIMPLE, devredop, type)
-#if 0
   IMPL_COLL_FUNC(func, algo, LL,     devredop, type) \
   IMPL_COLL_FUNC(func, algo, LL128,  devredop, type) \
   IMPL_COLL_FUNC(func, algo, SIMPLE, devredop, type)
-#endif
 
 #define IMPL_COLL3(func, devredop, type, ncclType) \
-  IMPL_COLL4(func, RING,    devredop, type, ncclType)
-#if 0
   IMPL_COLL4(func, TREE,    devredop, type, ncclType) \
   IMPL_COLL4(func, RING,    devredop, type, ncclType) \
   IMPL_COLL4(func, COLLNET, devredop, type, ncclType)
-#endif
 
 #define IMPL_COLL2(func, devredop) IMPL_COLL3(func, devredop, float,   ncclFloat32)
 #if 0
