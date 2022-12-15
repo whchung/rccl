@@ -75,11 +75,11 @@ static void* const ncclKernelGeneric = (void*)NCCL_KERN_NAME(SendRecv, RING, SIM
 
 typedef void(*ncclKern_t)(struct ncclDevComm* __restrict__ comm, void* __restrict__ channelMaskPtr, struct ncclWork* __restrict__ workHead);
 // Must be consistent with the ncclFuncSet enum
-static ncclKern_t const ncclKerns[4] = {
+static ncclKern_t const ncclKerns[1] = {
   NCCL_KERN_NAME(SendRecv, RING, SIMPLE, Sum, int8_t),
-  NCCL_KERN_NAME_DEBUG(SendRecv, RING, SIMPLE, Sum, int8_t),
-  NCCL_KERN_NAME_LL128(SendRecv, RING, SIMPLE, Sum, int8_t),
-  NCCL_KERN_NAME_LL128_DEBUG(SendRecv, RING, SIMPLE, Sum, int8_t),
+  //NCCL_KERN_NAME_DEBUG(SendRecv, RING, SIMPLE, Sum, int8_t),
+  //NCCL_KERN_NAME_LL128(SendRecv, RING, SIMPLE, Sum, int8_t),
+  //NCCL_KERN_NAME_LL128_DEBUG(SendRecv, RING, SIMPLE, Sum, int8_t),
 };
 
 static ncclResult_t computeColl(struct ncclInfo* info /* input */, int* workFuncIndex, struct ncclWorkElem* work, struct ncclProxyOp* proxyOp /* output */);

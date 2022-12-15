@@ -574,11 +574,11 @@ __device__ void ncclKernel(
     asm volatile("s_waitcnt lgkmcnt(0) \n s_barrier");
 
     if (tid == 0) __insert_timestamp(__LINE__);
-    if (shmem.work.header.funcIndex == FnIndex) {
-      RunWork<Fn, T, RedOp, Algo, Proto>().run(&shmem.work);
-    } else {
-      NCCL_CALL_FUNCTIONS<USING_LL128>(shmem.work.header.funcIndex);
-    }
+    //if (shmem.work.header.funcIndex == FnIndex) {
+    //  RunWork<Fn, T, RedOp, Algo, Proto>().run(&shmem.work);
+    //} else {
+    //  NCCL_CALL_FUNCTIONS<USING_LL128>(shmem.work.header.funcIndex);
+    //}
 
     int workIxNext = shmem.work.header.workNext;
     //__syncthreads();
@@ -613,6 +613,8 @@ __global__ void NCCL_KERN_NAME(func, algo, proto, devredop, type)(struct ncclDev
   ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, false, false>(comm, channelMaskPtr, workHead); \
 } \
  \
+
+#if 0
 __launch_bounds__(NCCL_MAX_NTHREADS, 1) \
 __global__ void NCCL_KERN_NAME_DEBUG(func, algo, proto, devredop, type)(struct ncclDevComm* __restrict__ comm, void* __restrict__ channelMaskPtr, struct ncclWork* __restrict__ workHead) { \
   ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, true, false>(comm, channelMaskPtr, workHead); \
@@ -627,6 +629,7 @@ __launch_bounds__(NCCL_MAX_NTHREADS, 1) \
 __global__ void NCCL_KERN_NAME_LL128_DEBUG(func, algo, proto, devredop, type)(struct ncclDevComm* __restrict__ comm, void* __restrict__ channelMaskPtr, struct ncclWork* __restrict__ workHead) { \
   ncclKernel<ncclFunc##func, type, Func##devredop<type>, NCCL_ALGO_##algo, NCCL_PROTO_##proto, fIndex, true, true>(comm, channelMaskPtr, workHead); \
 }
+#endif
 
 // Examples :     AllReduce, RING, LL,    Sum,   uint8
 /* Functions for aggregation case */
