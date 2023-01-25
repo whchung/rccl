@@ -574,11 +574,11 @@ __device__ void ncclKernel(
     asm volatile("s_waitcnt lgkmcnt(0) \n s_barrier");
 
     if (tid == 0) __insert_timestamp(__LINE__);
-    //if (shmem.work.header.funcIndex == FnIndex) {
-    //  RunWork<Fn, T, RedOp, Algo, Proto>().run(&shmem.work);
-    //} else {
-    //  NCCL_CALL_FUNCTIONS<USING_LL128>(shmem.work.header.funcIndex);
-    //}
+    if (shmem.work.header.funcIndex == FnIndex) {
+      RunWork<Fn, T, RedOp, Algo, Proto>().run(&shmem.work);
+    } else {
+      NCCL_CALL_FUNCTIONS<USING_LL128>(shmem.work.header.funcIndex);
+    }
 
     int workIxNext = shmem.work.header.workNext;
     //__syncthreads();
