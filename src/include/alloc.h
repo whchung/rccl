@@ -126,6 +126,7 @@ ncclResult_t ncclCudaCallocDebug(const char *filefunc, int line, T** ptr, size_t
   else
     CUDACHECKGOTO(hipMalloc(ptr, nelem*sizeof(T)), result, finish);
   time2 = clockNano();
+  // XXX here
   CUDACHECKGOTO(hipMemsetAsync(*ptr, 0, nelem*sizeof(T), stream), result, finish);
   CUDACHECKGOTO(hipStreamSynchronize(stream), result, finish);
   if (sideStream == nullptr)
@@ -156,6 +157,7 @@ ncclResult_t ncclCudaCallocAsyncDebug(const char *filefunc, int line, T** ptr, s
   else
     CUDACHECKGOTO(hipMalloc(ptr, nelem*sizeof(T)), result, finish);
   time = clockNano() - time;
+  // XXX here
   CUDACHECKGOTO(hipMemsetAsync(*ptr, 0, nelem*sizeof(T), stream), result, finish);
   int dev;
   CUDACHECK(hipGetDevice(&dev));
