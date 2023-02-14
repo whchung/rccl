@@ -127,7 +127,7 @@ for (int r = 0; r < numloops; r++) { \
 
 template<typename T, typename RedOp, typename Proto>
 __device__ __forceinline__ void mscclRunInterpreter(
-  struct ncclDevComm* comm, struct mscclAlgo* algo, struct mscclWork work) {
+  struct ncclDevComm* comm, struct mscclAlgo* algo, struct mscclWork* work) {
   const int tid = threadIdx.x;
   const int bid = blockIdx.x;
   const int nthreads = NCCL_MAX_NTHREADS;
@@ -170,7 +170,7 @@ __device__ __forceinline__ void mscclRunInterpreter(
       break;
     case 2:
       dst = &mscclShmem.work;
-      src = &work;
+      src = work + blockIdx.x;
       bytes = sizeof(mscclWork);
       static_assert(sizeof(mscclWork) <= sizeof(uint64_t) * WARP_SIZE, "mscclWork cannot be loaded by a single warp in one insn.");
       break;
@@ -185,8 +185,10 @@ __device__ __forceinline__ void mscclRunInterpreter(
   }
   __synclds(); // publish shmem
 
-  // Deference reduce args if required
-  if (tid == 0 && mscclShmem.work.hasReduce && mscclShmem.work.redOpArgIsPtr) {
+  if (tid == 0) {
+    *mscclShmem.work.workFifoDone = mscclShmem.work.workFifoDoneAck;
+  } else if (tid == WARP_SIZE && mscclShmem.work.hasReduce && mscclShmem.work.redOpArgIsPtr) {
+    // Deference reduce args if required
     switch (sizeof(T)) {
       case 1:
         mscclShmem.work.redOpArg = *reinterpret_cast<uint8_t*>(mscclShmem.work.redOpArg);
@@ -205,7 +207,7 @@ __device__ __forceinline__ void mscclRunInterpreter(
     }
   }
   __synclds(); // publish shmem
-
+  
   // User pointers for primitives
   T* thisInput = (T*)mscclShmem.work.sendBuff;
   T* thisOutput = (T*)mscclShmem.work.recvBuff;
@@ -226,7 +228,7 @@ __device__ __forceinline__ void mscclRunInterpreter(
   Primitives<T, RedOp, FanAsymmetric<1,1>, 1, Proto, 0> prims
     (tid, nthreads, &recvPeer, &sendPeer, thisInput, thisOutput, mscclShmem.work.redOpArg);
 
-  const ssize_t sizePerMscclChunk = mscclShmem.work.count / mscclShmem.work.nChunksPerLoop;
+  const ssize_t sizePerMscclChunk = mscclShmem.work.sizePerMscclChunk;
   uint32_t maxAllowedCount = mscclShmem.work.maxAllowedCount;
 
   // msccl flags all start out with 0. this is used as a part of the flag to make sure different work items deal with different synchronization flags
@@ -360,13 +362,13 @@ __device__ __forceinline__ void mscclRunInterpreter(
 }
 
 #define MSCCL_IMPL_KERNEL_ENTRY_FUNC_DEVREDOP_TYPE(devredop, type) \
-__global__ void MSCCL_KERNEL_ENTRY_NAME(devredop, type, LL)(struct ncclDevComm* comm, struct mscclAlgo* algo, struct mscclWork work) { \
+__global__ void MSCCL_KERNEL_ENTRY_NAME(devredop, type, LL)(struct ncclDevComm* comm, struct mscclAlgo* algo, struct mscclWork* work) { \
   mscclRunInterpreter<type, Func##devredop<type>, ProtoLL>(comm, algo, work); \
 } \
-__global__ void MSCCL_KERNEL_ENTRY_NAME(devredop, type, LL128)(struct ncclDevComm* comm, struct mscclAlgo* algo, struct mscclWork work) { \
+__global__ void MSCCL_KERNEL_ENTRY_NAME(devredop, type, LL128)(struct ncclDevComm* comm, struct mscclAlgo* algo, struct mscclWork* work) { \
   mscclRunInterpreter<type, Func##devredop<type>, ProtoLL128>(comm, algo, work); \
 } \
-__global__ void MSCCL_KERNEL_ENTRY_NAME(devredop, type, Simple)(struct ncclDevComm* comm, struct mscclAlgo* algo, struct mscclWork work) { \
+__global__ void MSCCL_KERNEL_ENTRY_NAME(devredop, type, Simple)(struct ncclDevComm* comm, struct mscclAlgo* algo, struct mscclWork* work) { \
   mscclRunInterpreter<type, Func##devredop<type>, ProtoSimple<MSCCL_CHUNKSTEPS/MSCCL_SLICESTEPS, MSCCL_SLICESTEPS>>(comm, algo, work); \
 }
 
