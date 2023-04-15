@@ -744,8 +744,6 @@ private:
   // MSCCL primitives
   __device__ void sendWithBarrier(intptr_t inpIx, int eltN) {
     send(inpIx, eltN);
-    // This is the only primitive.instruction where there is no barrier at the end, add it
-    barrier();
   }
   __device__ void localCopy(T* srcs, T* dsts, int eltN) {
     return mscclGenericOp<0,1,0,0>(&srcs, 1, &dsts, 1, eltN);
