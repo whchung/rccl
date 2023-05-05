@@ -147,4 +147,26 @@ extern __device__ void NCCL_ONERANK_REDUCE_NAME(PreMulSum, double)();
 #define ALLTOALL_PIVOT_SLICESTEPS 2
 #define ALLTOALL_PIVOT_CHUNKSTEPS 4
 
+#define GET_BARRIER_BIT \
+	        (((uint32_t __attribute__((address_space(4)))*)__builtin_amdgcn_dispatch_ptr())[0] >> 8 & 0x1)
+
+#define GET_WRITE_DISPATCH_ID \
+	        (((uint32_t __attribute__((address_space(4)))*)__builtin_amdgcn_queue_ptr())[10 + 4])
+
+#define GET_READ_DISPATCH_ID \
+	        (((uint32_t __attribute__((address_space(4)))*)__builtin_amdgcn_queue_ptr())[10 + 4 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 9])
+
+#define WAIT_ON_PREVIOUS_KERNEL_TO_COMPLETE \
+  do { \
+    uint32_t bb = GET_BARRIER_BIT; \
+    if (!bb) { \
+      uint32_t w = GET_WRITE_DISPATCH_ID; \
+      uint32_t r = GET_READ_DISPATCH_ID; \
+      while (w - r != 1) { \
+        w = GET_WRITE_DISPATCH_ID; \
+        r = GET_READ_DISPATCH_ID; \
+      } \
+    } \
+  } while(false); \
+
 #endif

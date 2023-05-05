@@ -1003,7 +1003,7 @@ ncclResult_t ncclLaunchKernel(struct ncclComm* comm, struct ncclKernelPlan* plan
   dim3 block = {(unsigned)plan->threadPerBlock, 1, 1};
   void *args[3] = {&comm->devComm, &plan->channelMask, &plan->workHead};
   if (tasks->numStreams == 1) {
-    CUDACHECK(hipExtLaunchKernel(plan->kernelFn, grid, block, args, 0, tasks->streams->stream, NULL, comm->doneEvent, 0));
+    CUDACHECK(hipExtLaunchKernel(plan->kernelFn, grid, block, args, 0, tasks->streams->stream, NULL, comm->doneEvent, hipExtAnyOrderLaunch));
     comm->lastStream = tasks->streams->stream;
     return ncclSuccess;
   }

@@ -227,6 +227,8 @@ __device__ __forceinline__ void mscclRunInterpreter(
   const ssize_t sizePerMscclChunk = mscclShmem.work.count / mscclShmem.work.nChunksPerLoop;
   uint32_t maxAllowedCount = mscclShmem.work.maxAllowedCount;
 
+  WAIT_ON_PREVIOUS_KERNEL_TO_COMPLETE
+
   // msccl flags all start out with 0. this is used as a part of the flag to make sure different work items deal with different synchronization flags
   // this still needs more work. when we make a way around the queue, the flag might have been set to undesired values. will be fixed in subsequent versions.
   const int64_t workIndex = mscclShmem.work.workIndex;

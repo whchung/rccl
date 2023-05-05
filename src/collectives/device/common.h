@@ -651,6 +651,8 @@ __forceinline__ __device__ void ncclKernel(
 
   if (COLLTRACE && tid == 0) traceKernelLaunch(true);
 
+  WAIT_ON_PREVIOUS_KERNEL_TO_COMPLETE
+
   while (true) {
     // Notify host that all fifo reads are complete.
     if (tid == 0 && ncclShmem.work.header.isLast && ncclShmem.work.header.inFifo) {
