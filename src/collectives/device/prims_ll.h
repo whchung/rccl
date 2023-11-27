@@ -121,7 +121,7 @@ private:
       }
       sendConnHead += 1;
     }
-    barrier();
+    //barrier();
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_PRIM_LL_WAIT_SEND_EXIT)
     if (tid == 0) {
       NpKit::CollectGpuEvent(NPKIT_EVENT_PRIM_LL_WAIT_SEND_EXIT, nbytes, 0, NPKIT_GET_GPU_TIMESTAMP(),
