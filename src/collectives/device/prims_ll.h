@@ -626,7 +626,7 @@ private:
     if (tid < fan.nsend())
       sendConn->step = sendConnHead;
     // Ensure all steps written back
-    barrier();
+    //barrier();
   }
 
   __device__ void setDataPtrs(void const *inputBuf, void *outputBuf) {
