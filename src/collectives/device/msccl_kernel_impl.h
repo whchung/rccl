@@ -290,6 +290,7 @@ __device__ __forceinline__ void mscclRunInterpreter(
   // this still needs more work. when we make a way around the queue, the flag might have been set to undesired values. will be fixed in subsequent versions.
   const int64_t workIndex = mscclShmem.work.workIndex;
   volatile struct mscclFlag* mscclFlags = mscclShmem.work.syncFlags;
+  bool hasReceived = false;
   for (ssize_t gridOffset = 0, iter = 0; gridOffset < sizePerMscclChunk; gridOffset += chunkSize, iter++) {
     ssize_t realChunkSize;
     if (Proto::Id == NCCL_PROTO_SIMPLE) {
@@ -353,12 +354,13 @@ __device__ __forceinline__ void mscclRunInterpreter(
               NpKit::CollectGpuEventLDS(NPKIT_EVENT_MSCCL_RECV_ENTRY, thisNelem*sizeof(T), 0, NPKIT_GET_GPU_TIMESTAMP());
             }
 #endif	
-          prims.recv(dstOffset, thisNelem);
+          prims.recv(dstOffset, thisNelem, hasReceived);
 #if defined(ENABLE_NPKIT) && defined(ENABLE_NPKIT_EVENT_MSCCL_RECV_EXIT)
             if (tid == 0) {
               NpKit::CollectGpuEventLDS(NPKIT_EVENT_MSCCL_RECV_EXIT, thisNelem*sizeof(T), 0, NPKIT_GET_GPU_TIMESTAMP());
             }
 #endif
+	  hasReceived = true;
         }
         else if (t->type == MSCCL_REDUCE) {
           int numReductions = t->numReductions;
