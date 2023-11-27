@@ -16,7 +16,7 @@
 #define NCCL_SPINS_BEFORE_CHECK_ABORT 1000000
 
 #define barrier_by_group() do { \
-  __asm__ __volatile__("s_barrier"); \
+  __asm__ __volatile__("s_waitcnt vmcnt(0) lgkmcnt(0)\ns_barrier"); \
 } while (0)
 
 /* Protocol classes: ProtoSimple, ProtoLL, ProtoLL128
